@@ -1,0 +1,4 @@
+qobject https://doc.qt.io/qt-6/qobject.html
+signal https://doc.qt.io/qt-6/signalsandslots.html
+Qtimer https://doc.qt.io/qt-6/qtimer.html
+habr signal https://habr.com/ru/articles/215181/  https://habr.com/ru/articles/214379/
