@@ -1,0 +1,32 @@
+Пояснение команд:
+find_package:
+Ищет установленные библиотеки Qt
+
+Qt6 или Qt5 - версии Qt
+
+Widgets - модуль для GUI виджетов
+
+Core - базовый модуль Qt (содержит QString, QObject, сигналы/слоты и т.д.)
+
+set(CMAKE_AUTOMOC ON):
+Автоматически запускает moc (Meta-Object Compiler) для классов с Q_OBJECT
+
+Преобразует макросы Qt в C++ код
+
+set(CMAKE_AUTOUIC ON):
+Автоматически компилирует .ui файлы в C++ код
+
+set(CMAKE_AUTORCC ON):
+Автоматически включает ресурсы (.qrc файлы) в проект
+
+qt_add_executable:
+Специальная команда Qt для создания исполняемого файла
+
+MANUAL_FINALIZATION - откладывает финальную настройку до вызова qt_finalize_executable
+
+target_link_libraries:
+Связывает вашу программу с библиотеками Qt
+
+PRIVATE - зависимости только для этой цели (не передаются другим целям)
+
+qt_finalize_executable:
