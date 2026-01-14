@@ -26,11 +26,12 @@ private slots:
 
     // -- Слоты обновления отображения --
     void slot_updateDisplay(double m_time);
-    void slot_appendLap(int m_n, double m_time, double m_totalTime);
+
 
 private:
     Ui::MainWindow *__ui;
     Stopwatch *__stopwatch;    // Указатель на бизнес-логику
+
 
 };
 #endif // MAINWINDOW_H

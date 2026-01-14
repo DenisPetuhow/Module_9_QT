@@ -20,7 +20,7 @@ MainWindow::MainWindow(QWidget *m_parent) :
 
     // Логика -> Обновление UI
     connect(__stopwatch, &Stopwatch::sig_timeUpdated, this, &MainWindow::slot_updateDisplay);
-    connect(__stopwatch, &Stopwatch::sig_lapRecorded, this, &MainWindow::slot_appendLap);
+
 }
 
 MainWindow::~MainWindow()
@@ -43,16 +43,31 @@ void MainWindow::on_pb_start_clicked()
 
 void MainWindow::on_pb_clear_clicked()
 {
-    __stopwatch->reset();
-    __ui->tb_race->clear(); // Очищаем QTextBrowser
-    __ui->pb_start->setText("Старт");
-    __ui->pb_time->setEnabled(false);
+    if (__stopwatch->isRunning()) {
+        __stopwatch->reset();
+        __ui->tb_race->clear(); // Очищаем QTextBrowser
+        __stopwatch->start();
+    } else {
+        __stopwatch->reset();
+        __ui->tb_race->clear(); // Очищаем QTextBrowser
+        __ui->pb_start->setText("Старт");
+        __ui->pb_time->setEnabled(false);
+            }
 }
 
 
 void MainWindow::on_pb_time_clicked()
 {
-    __stopwatch->recordLap();
+    // 1. Вызываем метод и получаем структуру
+    Stopwatch::LapData lap = __stopwatch->recordLap();
+
+    // 2. Сразу формируем строку и выводим
+    QString msg = QString("Круг %1, время: %2 сек, общее время: %3")
+                      .arg(lap.lapNumber)
+                      .arg(lap.lapTime, 0, 'f', 1)
+                      .arg(lap.totalTime, 0, 'f', 1);
+
+    __ui->tb_race->append(msg);
 }
 
 // Обновление поля le_time
@@ -61,13 +76,3 @@ void MainWindow::slot_updateDisplay(double m_time)
     __ui->le_time->setText(QString::number(m_time, 'f', 1));
 }
 
-// Добавление записи в tb_race
-void MainWindow::slot_appendLap(int m_n, double m_time, double m_totalTime)
-{
-    QString msg = QString("Круг %1, время: %2 сек, общее время: %3")
-                      .arg(m_n)
-                      .arg(m_time, 0, 'f', 1)
-                      .arg(m_totalTime, 0, 'f', 1);
-
-    __ui->tb_race->append(msg);
-}

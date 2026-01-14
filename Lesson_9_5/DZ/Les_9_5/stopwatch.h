@@ -11,11 +11,20 @@ public:
     explicit Stopwatch(QObject *m_parent = nullptr);
     ~Stopwatch();
 
+
+    // Структура для хранения данных круга
+    struct LapData {
+        int lapNumber;
+        double lapTime;
+        double totalTime;
+    };
+
+
     // -- Методы управления --
     void start();       // Запуск таймера
     void stop();        // Остановка таймера
     void reset();       // Сброс данных
-    void recordLap();   // Логика расчета круга
+    LapData recordLap();   // Логика расчета круга
     bool isRunning() const; // Получение текущего статуса
 
 signals:

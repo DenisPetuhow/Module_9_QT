@@ -41,15 +41,20 @@ void Stopwatch::reset()
     emit sig_timeUpdated(0.0);
 }
 
-void Stopwatch::recordLap()
+Stopwatch::LapData Stopwatch::recordLap()
 {
     __lapCounter++;
     // Считаем разницу между текущим общим временем и временем прошлого круга
     long long currentLap = __totalTimeDeciseconds - __lastLapTimeDeciseconds;
     __lastLapTimeDeciseconds = __totalTimeDeciseconds;
 
-    // Отправляем данные (делим на 10.0 для получения секунд)
-    emit sig_lapRecorded(__lapCounter, currentLap / 10.0, __totalTimeDeciseconds / 10.0);
+    // Формируем структуру и возвращаем её
+    LapData data;
+    data.lapNumber = __lapCounter;
+    data.lapTime = currentLap / 10.0;
+    data.totalTime = __totalTimeDeciseconds / 10.0;
+
+    return data;
 }
 
 bool Stopwatch::isRunning() const
