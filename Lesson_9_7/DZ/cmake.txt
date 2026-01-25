@@ -1,0 +1,204 @@
+Где взять qcustomplot2.dll
+Вариант 1: Из материалов курса
+Скорее всего, .dll уже есть в папке примера 07_GraphicsCustomPlot:
+C:\1Petuhow\2Proger\1.Lesson\Module_9\Lesson_9_7\LES\07_GraphicsCustomPlot\
+├── qcustomplot.h
+├── qcustomplot2.dll      ← Должен быть здесь
+└── ...
+Просто скопируй оттуда в свой проект.
+
+Вариант 2: Скомпилировать самому
+QCustomPlot распространяется только как исходники. Чтобы получить .dll:
+
+Скачать с qcustomplot.com
+Распаковать архив
+Открыть qcustomplot-sharedlib/sharedlib-compilation/sharedlib-compilation.pro в Qt Creator
+Собрать проект
+В папке сборки появится qcustomplot2.dll
+
+
+Вариант 3: Использовать статическую линковку (ПРОЩЕ!)
+Если .dll нет — не мучайся, используй статическое подключение:
+cmakecmake_minimum_required(VERSION 3.5)
+project(PreGraphic VERSION 0.1 LANGUAGES CXX)
+
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Флаг для MinGW (решает ошибку "too many sections")
+if(MINGW)
+    add_compile_options(-Wa,-mbig-obj)
+endif()
+
+find_package(Qt6 REQUIRED COMPONENTS Widgets Concurrent PrintSupport)
+
+set(PROJECT_SOURCES
+        main.cpp
+        mainwindow.cpp
+        mainwindow.h
+        mainwindow.ui
+        graphwindow.cpp
+        graphwindow.h
+        # ===== СТАТИЧЕСКОЕ ПОДКЛЮЧЕНИЕ =====
+        qcustomplot.cpp
+        qcustomplot.h
+)
+
+add_executable(${PROJECT_NAME}
+    ${PROJECT_SOURCES}
+)
+
+# БЕЗ add_compile_definitions(QCUSTOMPLOT_USE_LIBRARY) !
+# БЕЗ qcustomplot2.dll !
+
+target_link_libraries(${PROJECT_NAME}
+    Qt6::Widgets
+    Qt6::Concurrent
+    Qt6::PrintSupport
+)
+Нужно только:
+
+Скопировать qcustomplot.cpp и qcustomplot.h в папку проекта
+Добавить флаг -Wa,-mbig-obj для MinGW
+
+
+Сравнение
+ПодходЧто нужноСложностьСтатический.cpp + .h✅ ПростоДинамический.dll + .h❌ Нужно найти/собрать DLL
+Рекомендация: используй статический вариант — он проще и не требует .dll.давай с начала сборка библиотеки 
+по ссылке скачал архив https://www.qcustomplot.com/index.php/download
+QCustomPlot.tar.gz (3.8 MB, Full package contains source, documentation and examples)
+вот файлы 
+что дальше?18:42Распознал структуру архива и подготовил два варианта сборки.Пользователь скачал архив QCustomPlot и распаковал его. На скриншоте видны файлы:
+
+documentation (папка)
+examples (папка)
+changelog
+GPL
+qcustomplot.cpp (1 277 КБ)
+qcustomplot.h (304 КБ)
+
+Это исходники QCustomPlot. Теперь нужно объяснить два варианта:
+
+Статическая сборка - просто скопировать .cpp и .h в проект
+Динамическая сборка - нужно скомпилировать .dll
+
+Для динамической сборки нужен отдельный проект sharedlib-compilation, который обычно находится в папке examples или отдельно. Но на скриншоте я не вижу этой папки. Возможно, пользователю нужно заглянуть в examples.
+Давай объясню оба варианта.Отлично! Вижу файлы QCustomPlot
+У тебя есть всё необходимое. Теперь два пути:
+
+Вариант А: Статическая сборка (РЕКОМЕНДУЮ)
+Просто скопируй 2 файла в папку своего проекта:
+C:\1Petuhow\...\DZ\PreGraphic\
+├── CMakeLists.txt
+├── main.cpp
+├── mainwindow.cpp
+├── mainwindow.h
+├── mainwindow.ui
+├── graphwindow.cpp
+├── graphwindow.h
+├── qcustomplot.cpp    ← СКОПИРОВАТЬ СЮДА
+└── qcustomplot.h      ← СКОПИРОВАТЬ СЮДА
+Готово! Используй CMakeLists.txt со статической сборкой (с флагом -Wa,-mbig-obj).
+
+Вариант Б: Сборка DLL (если хочешь динамическую)
+Шаг 1: Найди папку sharedlib
+Зайди в папку examples:
+QCustomPlot/
+├── examples/
+│   └── sharedlib-compilation/    ← Нужна эта папка
+│       └── sharedlib-compilation.pro
+Шаг 2: Открой проект в Qt Creator
+
+Файл → Открыть файл или проект
+Выбери sharedlib-compilation.pro
+Выбери комплект сборки (Kit) — тот же что и для основного проекта
+
+Шаг 3: Собери в режиме Release
+
+Слева внизу переключи Debug → Release
+Нажми Собрать (молоток) или Ctrl+B
+
+Шаг 4: Найди DLL
+После сборки в папке build-sharedlib-compilation-...-Release/release/ появятся:
+qcustomplot2.dll     ← Библиотека для запуска
+libqcustomplot2.a    ← Для линковки (MinGW)
+Шаг 5: Скопируй в проект
+PreGraphic/
+├── qcustomplot.h        ← Из архива
+├── qcustomplot2.dll     ← Из сборки
+└── ...
+
+Что выбрать?
+КритерийСтатическаяДинамическаяСложность✅ Копируешь 2 файла❌ Нужно собиратьВремя компиляции❌ Долгая✅ БыстраяРаспространение✅ Один .exe❌ .exe + .dll
+Для учёбы — статическая проще. Хочешь попробовать собрать DLL?там только18:45Выявил отсутствие папки и предложил альтернативный подход.Пользователь показывает, что в папке examples нет папки sharedlib-compilation. Там только:
+
+axis-tags
+interactions
+plots
+scrollbar-axis-range-control
+text-document-integration
+
+Значит в этой версии QCustomPlot нет готового проекта для сборки shared library.
+В таком случае лучше использовать статическую сборку - просто скопировать qcustomplot.cpp и qcustomplot.h в проект.
+Нужно объяснить пользователю, что папки sharedlib нет в этом архиве, и предложить использовать статический вариант, который проще.Папки sharedlib нет — используй статический вариант!
+В твоей версии архива нет проекта для сборки DLL. Это нормально — просто используй статическое подключение.
+
+Что делать:
+Шаг 1: Скопируй файлы в проект
+Из папки QCustomPlot/ скопируй в PreGraphic/:
+qcustomplot.cpp   (1 277 КБ)
+qcustomplot.h     (304 КБ)
+Шаг 2: Структура проекта должна быть такой:
+C:\1Petuhow\...\DZ\PreGraphic\
+├── CMakeLists.txt
+├── main.cpp
+├── mainwindow.cpp
+├── mainwindow.h
+├── mainwindow.ui
+├── graphwindow.cpp
+├── graphwindow.h
+├── qcustomplot.cpp    ← Скопированный
+└── qcustomplot.h      ← Скопированный
+Шаг 3: Используй этот CMakeLists.txt
+cmakecmake_minimum_required(VERSION 3.5)
+project(PreGraphic VERSION 0.1 LANGUAGES CXX)
+
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# ОБЯЗАТЕЛЬНО для MinGW — решает ошибку "too many sections"
+if(MINGW)
+    add_compile_options(-Wa,-mbig-obj)
+endif()
+
+find_package(Qt6 REQUIRED COMPONENTS Widgets Concurrent PrintSupport)
+
+set(PROJECT_SOURCES
+        main.cpp
+        mainwindow.cpp
+        mainwindow.h
+        mainwindow.ui
+        graphwindow.cpp
+        graphwindow.h
+        qcustomplot.cpp
+        qcustomplot.h
+)
+
+add_executable(${PROJECT_NAME}
+    ${PROJECT_SOURCES}
+)
+
+target_link_libraries(${PROJECT_NAME}
+    Qt6::Widgets
+    Qt6::Concurrent
+    Qt6::PrintSupport
+)
+
+Готово!
+Никаких .dll не нужно. Собирай проект — должно работать.

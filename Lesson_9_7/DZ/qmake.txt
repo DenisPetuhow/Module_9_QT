@@ -1,0 +1,98 @@
+Разобрал способ запуска проекта через .pro файл.Пользователь хочет узнать, как запустить проект через .pro файл (qmake) вместо CMake в Qt Creator.Запуск через .pro файл (qmake)
+Создай файл PreGraphic.pro в папке проекта:
+pro# Настройки Qt
+QT       += core gui concurrent printsupport
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+
+# Стандарт C++
+CONFIG += c++17
+
+# Имя проекта
+TARGET = PreGraphic
+TEMPLATE = app
+
+# Исходники
+SOURCES += \
+    main.cpp \
+    mainwindow.cpp \
+    graphwindow.cpp
+
+# Заголовки
+HEADERS += \
+    mainwindow.h \
+    graphwindow.h
+
+# Формы UI
+FORMS += \
+    mainwindow.ui
+
+# ===== QCUSTOMPLOT =====
+# Вариант 1: Динамическая библиотека (.dll)
+DEFINES += QCUSTOMPLOT_USE_LIBRARY
+LIBS += -L$$PWD -lqcustomplot2
+
+# Вариант 2: Статическая (раскомментируй если нужно)
+# SOURCES += qcustomplot.cpp
+# HEADERS += qcustomplot.h
+# # Для MinGW (большие объектные файлы)
+# QMAKE_CXXFLAGS += -Wa,-mbig-obj
+```
+
+---
+
+## Структура проекта
+```
+PreGraphic/
+├── PreGraphic.pro         ← Новый файл
+├── main.cpp
+├── mainwindow.cpp
+├── mainwindow.h
+├── mainwindow.ui
+├── graphwindow.cpp
+├── graphwindow.h
+├── qcustomplot.h          ← Заголовок
+└── qcustomplot2.dll       ← Библиотека
+
+Как открыть в Qt Creator
+
+Файл → Открыть файл или проект
+Выбери PreGraphic.pro
+Выбери комплект сборки (Kit)
+Нажми Настроить проект
+Собери и запусти (Ctrl+R)
+
+
+Сравнение CMake и qmake
+АспектCMakeLists.txt.pro (qmake)Модули Qtfind_package(Qt6 COMPONENTS ...)QT += ...Исходникиset(PROJECT_SOURCES ...)SOURCES += ...Библиотекиtarget_link_libraries(...)LIBS += ...Definesadd_compile_definitions(...)DEFINES += ...Флаги компилятораadd_compile_options(...)QMAKE_CXXFLAGS += ...
+
+Если используешь статическую сборку
+proQT       += core gui concurrent printsupport
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+
+CONFIG += c++17
+
+TARGET = PreGraphic
+TEMPLATE = app
+
+# Для MinGW — решает "too many sections"
+win32-g++: QMAKE_CXXFLAGS += -Wa,-mbig-obj
+
+SOURCES += \
+    main.cpp \
+    mainwindow.cpp \
+    graphwindow.cpp \
+    qcustomplot.cpp        # ← Добавляем исходник
+
+HEADERS += \
+    mainwindow.h \
+    graphwindow.h \
+    qcustomplot.h          # ← Добавляем заголовок
+
+FORMS += \
+    mainwindow.ui
+
+# НЕ нужно: DEFINES += QCUSTOMPLOT_USE_LIBRARY
+# НЕ нужно: LIBS += ...
+
+Быстрый старт
+Скопируй этот .pro файл в папку проекта и открой его в Qt Creator — проект сразу настроится.
