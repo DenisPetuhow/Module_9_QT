@@ -20,7 +20,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(__client, &TCPclient::sig_Error, this, &MainWindow::DisplayError);
     connect(__client, &TCPclient::sig_Disconnected, this, [&]{
         DisplayConnectStatus(ERR_CONNECT_TO_HOST);
-
+    });
     // Данные
     connect(__client, &TCPclient::sig_sendTime, this, &MainWindow::DisplayTime);
     connect(__client, &TCPclient::sig_sendStat, this, &MainWindow::DisplayStat);
@@ -30,7 +30,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Кнопка очистки текстового поля
     connect(ui->pb_clear, &QPushButton::clicked, ui->tb_result, &QTextBrowser::clear);
-    });
+
 
 
 }
