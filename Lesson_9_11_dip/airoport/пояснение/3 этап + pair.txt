@@ -1,0 +1,160 @@
+Этап 3. Загрузка аэропортов из БД
+На этом этапе: Database выполняет SQL-запрос → передаёт результат через сигнал → MainWindow заполняет QComboBox → разблокирует UI. Здесь же заработает sig_disconnected.
+
+Что изменится по файлам
+database.h      — новый метод requestAirports(), новый сигнал sig_airportsReady()
+database.cpp    — реализация запроса + обработка ошибок + emit sig_disconnected()
+mainwindow.h    — новый слот onAirportsReady(), новый сигнал sig_requestAirports()
+mainwindow.cpp  — заполнение QComboBox, вызов unlockUI()
+CMakeLists.txt  — без изменений (Sql уже подключён)
+.pro            — без изменений
+3.1. database.h — добавляем запрос аэропортовOrchestrated database implementation for airport requestsOrchestrated database implementation for airport requests3.2. database.cpp — реализация запроса аэропортовПодготовился обновить компоненты для третьего этапаПодготовился обновить компоненты для третьего этапа3.3. mainwindow.h — добавляем слот и сигнал для аэропортовПодготовил обновление файла с новыми сигналамиПодготовил обновление файла с новыми сигналами3.4. mainwindow.cpp — подключаем всё вместеOrchestrated final assembly of responseOrchestrated final assembly of response3.5. УпаковкаOrchestrated continuation of stage threeOrchestrated continuation of stage three
+Полная цепочка вызовов при запуске
+ГЛАВНЫЙ ПОТОК                              РАБОЧИЙ ПОТОК
+─────────────                              ──────────────
+
+① Конструктор MainWindow
+   emit sig_connectToDB() ──────────────►  ② connectToDatabase()
+                                              __db.open()
+                                              │
+                                              ├─ УСПЕХ:
+   ③ onConnected()  ◄───── sig_connected() ──┘
+      lb_status = "Подключено"
+      emit sig_requestAirports() ──────►  ④ requestAirports()
+                                              query.exec("SELECT ...")
+                                              while (query.next())
+                                                airports.append(...)
+                                              │
+   ⑤ onAirportsReady(airports)  ◄─────────┘
+      cb_airport->addItem(...)                sig_airportsReady(airports)
+      unlockUI()
+      │
+      ▼
+   ИНТЕРФЕЙС ГОТОВ К РАБОТЕ
+Ключевой момент: почему передаём QList, а не QSqlQuery
+НЕЛЬЗЯ — QSqlQuery между потоками:
+
+  Рабочий поток:
+    QSqlQuery query(__db);
+    query.exec("SELECT ...");
+    emit sig_ready(query);   // передаём в главный поток
+                             //   ↓
+  Главный поток:             //   ↓
+    query.next();            // ← ОБРАЩЕНИЕ к __db из чужого потока!
+                             //   QSqlDatabase живёт в рабочем потоке
+                             //   → crash или повреждение данных
+
+
+ПРАВИЛЬНО — извлекаем данные и передаём копию:
+
+  Рабочий поток:
+    QSqlQuery query(__db);
+    query.exec("SELECT ...");
+    QList<QPair<...>> list;
+    while (query.next())
+      list.append(...);      // ← извлекли ВСЕ данные здесь
+    emit sig_ready(list);    // передаём простую структуру
+                             //   ↓
+  Главный поток:             //   ↓
+    for (auto &pair : list)  // ← работаем с КОПИЕЙ, БД не трогаем
+      cb->addItem(...);      //   безопасно!
+QComboBox с userData — зачем и как
+cpp// При заполнении — сохраняем и текст, и код:
+cb_airport->addItem("Шереметьево", "SVO");
+//                   ↑ видит user    ↑ скрытые данные
+
+// При использовании — достаём код:
+QString code = cb_airport->currentData().toString();  // → "SVO"
+
+// Этот код подставим в SQL-запрос на этапе 4:
+// WHERE f.departure_airport = 'SVO'
+Альтернатива — хранить отдельный QMap<QString, QString> (название → код) и искать по текущему тексту ComboBox. Но userData проще и надёжнее: данные привязаны к конкретному элементу списка, не разъедутся.
+Реализованные требования
+IDСтатусЧто сделаноФТ7✅requestAirports() → SQL-запрос к airports_dataФТ8✅onAirportsReady() → cb_airport->addItem()ФТ9✅airport_name->>'ru' в SQL → русские названияФТ4✅unlockUI() вызывается только ПОСЛЕ загрузки аэропортовsig_disconnected✅Теперь испускается при ошибке запроса в requestAirports()
+Файлы сборки
+Без изменений — модуль Sql уже был добавлен на этапе 2.
+
+Готов к Этапу 4 — Расписание рейсов (кнопка «Показать расписание» → SQL-запрос → QSqlQueryModel → QTableView)?Airport inspector stage3ZIP Open in ПроводникРезультат передаётся как QList<QPair<QString, QString>>:
+пооясни про qlist qPair как работают1 апр.Разобрал взаимодействие QList и QPair в контекстеРазобрал взаимодействие QList и QPair в контекстеQList и QPair — разбор
+QPair — это просто пара значений
+Представь, что тебе нужно хранить вместе две связанные вещи: название аэропорта и его код. Можно создать структуру:
+cpp// Вариант 1: своя структура
+struct Airport {
+    QString name;   // "Шереметьево"
+    QString code;   // "SVO"
+};
+QPair — это готовая структура от Qt, которая делает то же самое, но универсально, без объявления нового типа:
+cpp// Вариант 2: QPair — та же пара, но без объявления структуры
+QPair<QString, QString> airport;
+airport.first  = "Шереметьево";   // первый элемент пары
+airport.second = "SVO";            // второй элемент пары
+
+// Или короче через функцию-помощник:
+auto airport = qMakePair(QString("Шереметьево"), QString("SVO"));
+По сути QPair<A, B> внутри — это просто:
+cpptemplate <typename T1, typename T2>
+struct QPair {
+    T1 first;    // первое значение
+    T2 second;   // второе значение
+};
+QList — это динамический массив
+Аналог std::vector. Хранит последовательность элементов, может расти:
+cppQList<QString> cities;
+cities.append("Москва");       // индекс 0
+cities.append("Петербург");    // индекс 1
+cities.append("Новосибирск");  // индекс 2
+
+cities[0];          // → "Москва"
+cities.size();      // → 3
+QList + QPair вместе
+Когда соединяем — получаем список пар:
+cppQList<QPair<QString, QString>> airports;
+
+//                    first           second
+//                    (название)      (код)
+airports.append(qMakePair(QString("Абакан"),       QString("ABA")));
+airports.append(qMakePair(QString("Шереметьево"),  QString("SVO")));
+airports.append(qMakePair(QString("Внуково"),      QString("VKO")));
+В памяти это выглядит так:
+airports (QList)
+┌─────┬─────────────────────┬────────────────────┐
+│  №  │  .first (название)  │  .second (код)     │
+├─────┼─────────────────────┼────────────────────┤
+│  0  │  "Абакан"           │  "ABA"             │
+│  1  │  "Шереметьево"      │  "SVO"             │
+│  2  │  "Внуково"          │  "VKO"             │
+└─────┴─────────────────────┴────────────────────┘
+Как мы используем это в проекте
+В Database (рабочий поток) — заполняем список из результата SQL-запроса:
+cppQList<QPair<QString, QString>> airports;
+
+while (query.next()) {
+    QString name = query.value(0).toString();   // "Шереметьево"
+    QString code = query.value(1).toString();   // "SVO"
+    airports.append(qMakePair(name, code));     // добавляем пару в список
+}
+
+emit sig_airportsReady(airports);   // отправляем КОПИЮ списка в MainWindow
+В MainWindow (главный поток) — читаем список и заполняем QComboBox:
+cppvoid MainWindow::onAirportsReady(QList<QPair<QString, QString>> airports)
+{
+    for (const auto &pair : airports) {
+        // pair.first  → "Шереметьево"  (видит пользователь)
+        // pair.second → "SVO"           (скрытые данные для SQL)
+        ui->cb_airport->addItem(pair.first, pair.second);
+    }
+}
+Альтернативы — когда что использовать
+Нужно хранить пару значений:
+  QPair<QString, QString>     ← наш случай, быстро и просто
+
+Нужно хранить 3+ полей:
+  struct Airport {            ← своя структура понятнее
+      QString name;
+      QString code;
+      QString city;
+  };
+
+Нужно искать по ключу (код → название):
+  QMap<QString, QString>      ← словарь, поиск за O(log n)
+Мы выбрали QPair потому что у нас ровно два поля и данные просто перекладываются из SQL в ComboBox — поиск по ключу не нужен.

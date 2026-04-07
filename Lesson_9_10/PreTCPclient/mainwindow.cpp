@@ -158,7 +158,7 @@ void MainWindow::on_pb_connect_clicked()
 */
 void MainWindow::on_pb_request_clicked()
 {
-    ServiceHeader header;
+    ServiceHeader header; // временную переменную
     header.id = ID;
     header.status = STATUS_SUCCES;
 
@@ -170,7 +170,7 @@ void MainWindow::on_pb_request_clicked()
         __client->SendRequest(header);
         break;
     case 1:
-        header.idData = GET_SIZE;
+        header.idData = GET_SIZE; // Говорим серверу: "Я хочу отправить текст"
         __client->SendRequest(header);
         break;
     case 2:
@@ -178,7 +178,7 @@ void MainWindow::on_pb_request_clicked()
         __client->SendRequest(header);
         break;
     case 3:
-        header.idData = SET_DATA;
+        header.idData = SET_DATA; // Говорим серверу: "Я хочу отправить текст"
         // Для отправки данных используем спец. метод, который считает длину строки
         __client->SendData(header, ui->le_data->text());
         break;

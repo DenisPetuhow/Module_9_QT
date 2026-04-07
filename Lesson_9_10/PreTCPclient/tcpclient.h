@@ -34,7 +34,7 @@ private slots:
 private:
 
 QTcpSocket* __socket;
-ServiceHeader servHeader;
+ServiceHeader servHeader; // глобальная для этого класса переменная
 void ProcessingData(ServiceHeader header, QDataStream &stream);
 
 signals:

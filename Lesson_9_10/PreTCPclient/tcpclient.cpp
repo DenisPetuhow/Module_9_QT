@@ -9,13 +9,15 @@
 */
 QDataStream &operator >>(QDataStream &out, ServiceHeader &data){ // Чтение заголовка из потока
 
+    //Оператор >> называется оператором извлечения (чтения). Стрелочки показывают, куда текут данные: ИЗ потока В переменную. записывааем в переменную
+
     out >> data.id;
     out >> data.idData;
     out >> data.status;
     out >> data.len;
     return out;
 };
-QDataStream &operator <<(QDataStream &in, ServiceHeader &data){ // Запись заголовка в поток
+QDataStream &operator <<(QDataStream &in, ServiceHeader &data){ // Запись заголовка в поток   запмсываем из пимеременно
 
     in << data.id;
     in << data.idData;
@@ -115,7 +117,8 @@ void TCPclient::DisconnectFromHost()
 
 void TCPclient::ReadyReed()
 {
-    QDataStream incStream(__socket);
+    QDataStream incStream(__socket); // записывается что пришло от сервера изначально servHeader.idData == 0, если все прочитал и получил данные уже принимает данные нужного формата
+    //Мы подключаем поток напрямую к сети. По умолчанию он открывается для чтения. Мы используем его, чтобы вытягивать байты, которые прямо сейчас прилетают из интернета
 
     // Проверяем статус потока
     if(incStream.status() != QDataStream::Ok) return;
@@ -132,7 +135,8 @@ void TCPclient::ReadyReed()
                 return; // Байт мало, ждем следующего вызова readyRead
             }
 
-            incStream >>servHeader;
+            incStream >> servHeader; // Поток вспоминает функцию перегрузки, которую мы написали ранее (operator >>).Поток отрезает от своих данных первые 9 байт, раскладывает их по полочкам (в id
+            // Сам поток (конвейер) "прокручивается" на 9 байт вперед. То есть эти прочитанные байты из потока исчезают. Следующая операция чтения возьмет уже следующие байты.
 
             // Проверка на валидность ("Магическое число" ID)
             if(servHeader.id != ID){
@@ -142,6 +146,7 @@ void TCPclient::ReadyReed()
                     incStream >> hdr;
                     if(hdr == ID){
                         // Нашли заголовок! Дочитываем остальные поля
+                        servHeader.id = hdr; // Обязательно восстанавливаем правильный ID!
                         incStream >> servHeader.idData;
                         incStream >> servHeader.status;
                         incStream >> servHeader.len;
@@ -159,6 +164,8 @@ void TCPclient::ReadyReed()
 
         // Если мы здесь, значит есть Заголовок + Все данные. Обрабатываем!
         ProcessingData(servHeader, incStream);
+
+        // создаем поток для чтения от серввера, там через incStream узнаем заголовочные данные, потом непосредсьвенно передаем заг данные, и оставшийся поток который уже ждет чтение самого сообщения
 
         // Сбрасываем idData в 0, чтобы на следующей итерации начать чтение нового пакета
         servHeader.idData = 0;
